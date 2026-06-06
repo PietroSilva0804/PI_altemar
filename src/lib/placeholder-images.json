@@ -1,0 +1,53 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "prod_1",
+      "description": "Handmade ceramic mug on a wooden table",
+      "imageUrl": "https://images.unsplash.com/photo-1648889094882-69f889a3304f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyMHx8Y2FuZWNhJTIwZGUlMjBjZXJhbWljYXxlbnwwfHx8fDE3NTc1OTMzNTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ceramic mug"
+    },
+    {
+      "id": "prod_2",
+      "description": "Jar of organic orange blossom honey with a dipper",
+      "imageUrl": "https://images.unsplash.com/photo-1545246909-b4e087f05214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNHx8bWVsJTIwb3JnYW5pY298ZW58MHx8fHwxNzU3NTkzMzEyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "honey jar"
+    },
+    {
+      "id": "prod_3",
+      "description": "Clean, folded cotton t-shirt with a stylish print",
+      "imageUrl": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=600&auto=format&fit=crop",
+      "imageHint": "printed t-shirt"
+    },
+    {
+      "id": "prod_4",
+      "description": "Artisanal 70% vegan chocolate bar with cocoa beans",
+      "imageUrl": "https://images.unsplash.com/photo-1623660053975-cf75a8be0908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxiYXJyYSUyMGRlJTIwY2hvY29sYXRlfGVufDB8fHx8MTc1NzU5MzM3NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate bar"
+    },
+    {
+      "id": "prod_5",
+      "description": "Aromatic soy candle in a glass jar with lavender",
+      "imageUrl": "https://images.unsplash.com/photo-1643067077447-78239a403a18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx2ZWxhJTIwYXJvbWF0aWNhJTIwZGUlMjBzb2phfGVufDB8fHx8MTc1NzU5MzQyMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "soy candle"
+    },
+    {
+      "id": "prod_6",
+      "description": "Minimalist genuine leather wallet, brown and sleek",
+      "imageUrl": "https://images.unsplash.com/photo-1627123424574-724758594e93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjYXJ0ZWlyYSUyMGRlJTIwY291cm98ZW58MHx8fHwxNzU3NTkzNDQ1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather wallet"
+    },
+    {
+      "id": "prod_7",
+      "description": "Box of assorted gourmet brigadeiros, beautifully decorated",
+      "imageUrl": "https://images.unsplash.com/photo-1702982841001-f65535a5a40b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxicmlnYWRlaXJvc3xlbnwwfHx8fDE3NTc1OTM0NzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gourmet brigadeiros"
+    },
+    {
+      "id": "prod_8",
+      "description": "Botanical illustration art print in a minimalist frame",
+      "imageUrl": "https://images.unsplash.com/photo-1738522110111-1675be27f490?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwb3N0ZXIlMjBpbHVzdHJhZG8lMjAlMjJib3RhbmljYSUyMnxlbnwwfHx8fDE3NTc1OTM1Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "art print"
+    }
+  ]
+}
