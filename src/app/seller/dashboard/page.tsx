@@ -1,31 +1,62 @@
 
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  ShoppingBag, 
-  Plus, 
-  TrendingUp, 
-  Users, 
-  Package, 
+import {
+  Plus,
+  Package,
   Wand2,
   ArrowUpRight,
   Store,
-  DollarSign
+  DollarSign,
+  Boxes,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import { getProductsBySeller, SellerProduct } from '@/lib/products-service';
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 export default function SellerDashboardPage() {
-  const { user } = useAuth();
+  const { user, profile, isLoggedIn, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { title: 'Saldo a Receber', value: 'R$ 845,20', icon: DollarSign, trend: 'Próximo saque: 05/10' },
-    { title: 'Vendas do Mês', value: 'R$ 1.250,00', icon: TrendingUp, trend: '+12% vs mês anterior' },
-    { title: 'Pedidos Pendentes', value: '3', icon: ShoppingBag, trend: 'Envie hoje para ganhar EcoCoins' },
-    { title: 'Visitas na Loja', value: '1.240', icon: Users, trend: 'Pico às 19h ontem' },
-  ];
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isLoggedIn || !user) {
+      router.push('/login');
+      return;
+    }
+    (async () => {
+      setLoading(true);
+      try {
+        setProducts(await getProductsBySeller(user.uid));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [authLoading, isLoggedIn, user, router]);
+
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const inStock = products.reduce((acc, p) => acc + p.stock, 0);
+    const outOfStock = products.filter(p => p.stock === 0).length;
+    const inventoryValue = products.reduce((acc, p) => acc + p.price * p.stock, 0);
+    return [
+      { title: 'Produtos Publicados', value: String(totalProducts), icon: Package, trend: 'Total na sua vitrine' },
+      { title: 'Itens em Estoque', value: String(inStock), icon: Boxes, trend: 'Unidades disponíveis' },
+      { title: 'Sem Estoque', value: String(outOfStock), icon: AlertTriangle, trend: outOfStock > 0 ? 'Reponha para vender' : 'Tudo abastecido' },
+      { title: 'Valor do Inventário', value: formatCurrency(inventoryValue), icon: DollarSign, trend: 'Preço × estoque' },
+    ];
+  }, [products]);
 
   return (
     <div className="container py-8 md:py-12">
@@ -36,7 +67,9 @@ export default function SellerDashboardPage() {
           </div>
           <div>
             <h1 className="font-headline text-4xl">Painel do Vendedor</h1>
-            <p className="text-muted-foreground">Boas vendas, {user?.displayName || 'Empreendedor'}!</p>
+            <p className="text-muted-foreground">
+              Boas vendas, {profile?.storeName || user?.displayName || 'Empreendedor'}!
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -63,10 +96,8 @@ export default function SellerDashboardPage() {
               <stat.icon className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.trend}
-              </p>
+              <div className="text-2xl font-bold">{loading ? '—' : stat.value}</div>
+              <p className="text-xs text-muted-foreground mt-1">{stat.trend}</p>
             </CardContent>
           </Card>
         ))}
@@ -82,39 +113,51 @@ export default function SellerDashboardPage() {
                 <CardDescription>Gerencie sua vitrine digital.</CardDescription>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/products">Ver no Marketplace</Link>
+                <Link href="/seller/products">Ver inventário</Link>
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { name: 'Caneca de Cerâmica', price: 49.90, stock: 15 },
-                { name: 'Mel Orgânico', price: 35.00, stock: 8 },
-                { name: 'Vela Aromática', price: 59.90, stock: 0 }
-              ].map((prod, i) => (
-                <div key={i} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                      <Package className="h-6 w-6 text-muted-foreground" />
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : products.length === 0 ? (
+              <div className="py-8 text-center">
+                <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">Você ainda não publicou produtos.</p>
+                <Button className="mt-4" asChild>
+                  <Link href="/seller/products/new">Cadastrar primeiro produto</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {products.slice(0, 5).map((prod) => (
+                  <div key={prod.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{prod.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatCurrency(prod.price)} •
+                          <span className={prod.stock === 0 ? 'text-destructive ml-1' : 'ml-1'}>
+                            {prod.stock === 0 ? 'Sem estoque' : `${prod.stock} em estoque`}
+                          </span>
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">{prod.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price)} • 
-                        <span className={prod.stock === 0 ? 'text-destructive ml-1' : 'ml-1'}>
-                          {prod.stock === 0 ? 'Sem estoque' : `${prod.stock} em estoque`}
-                        </span>
-                      </p>
-                    </div>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/seller/products/${prod.id}/edit`}>Editar</Link>
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm">Editar</Button>
-                </div>
-              ))}
-            </div>
-            <Button variant="link" className="mt-4 p-0" asChild>
-              <Link href="/seller/products">Visualizar inventário completo <ArrowUpRight className="ml-1 h-4 w-4" /></Link>
-            </Button>
+                ))}
+                <Button variant="link" className="mt-2 p-0" asChild>
+                  <Link href="/seller/products">Visualizar inventário completo <ArrowUpRight className="ml-1 h-4 w-4" /></Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -130,12 +173,12 @@ export default function SellerDashboardPage() {
             <CardContent className="space-y-4">
               <div className="rounded-lg bg-background p-4 shadow-sm border border-primary/20">
                 <p className="text-sm italic text-muted-foreground">
-                  "Seu produto **'Caneca de Cerâmica'** é o mais visitado! Que tal criar um combo com o **'Mel Orgânico'** para aumentar seu ticket médio?"
+                  "Capriche nas descrições! Use o IA Writer para criar textos que vendem mais."
                 </p>
               </div>
               <div className="rounded-lg bg-background p-4 shadow-sm border border-accent/20">
                 <p className="text-sm italic text-muted-foreground">
-                  "Você tem 1 produto sem estoque. Reponha logo para não perder posições no ranking de busca!"
+                  "Produtos sem estoque perdem posição na busca. Mantenha seu inventário sempre atualizado!"
                 </p>
               </div>
               <Button className="w-full" variant="outline" asChild>

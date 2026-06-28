@@ -2,13 +2,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { UtensilsCrossed, Shirt, Paintbrush, Wrench, Sparkles, Home as HomeIcon, Package, ArrowRight, Check } from 'lucide-react';
-import type { LucideProps } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { categories, products } from '@/lib/placeholder-data';
 import ProductCard from '@/components/products/product-card';
 
-const iconMap: { [key: string]: (props: LucideProps) => JSX.Element } = {
+const iconMap: { [key: string]: LucideIcon } = {
   UtensilsCrossed,
   Shirt,
   Paintbrush,

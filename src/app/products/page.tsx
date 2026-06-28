@@ -1,7 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { products, categories } from '@/lib/placeholder-data';
+import { products as mockProducts, categories } from '@/lib/placeholder-data';
+import type { Product } from '@/lib/placeholder-data';
+import { getAllProducts } from '@/lib/products-service';
 import ProductCard from '@/components/products/product-card';
 import {
   Accordion,
@@ -129,6 +131,15 @@ function ProductsPageContent() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : []);
   const [price, setPrice] = useState<number>(MAX_PRICE);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
+  const [sellerProducts, setSellerProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    getAllProducts()
+      .then(setSellerProducts)
+      .catch(() => setSellerProducts([]));
+  }, []);
+
+  const products = useMemo(() => [...sellerProducts, ...mockProducts], [sellerProducts]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories((prev) =>
@@ -149,7 +160,7 @@ function ProductsPageContent() {
   const filteredProducts = useMemo(() => {
     const minRating = selectedRatings.length > 0 ? Math.min(...selectedRatings) : 0;
     
-    return products.filter(product => {
+    return products.filter((product: Product) => {
       const matchesSearch = searchTerm
         ? product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -165,7 +176,7 @@ function ProductsPageContent() {
 
       return matchesSearch && matchesCategory && matchesPrice && matchesRating;
     });
-  }, [searchTerm, selectedCategories, price, selectedRatings]);
+  }, [products, searchTerm, selectedCategories, price, selectedRatings]);
 
 
   const filterProps = {
