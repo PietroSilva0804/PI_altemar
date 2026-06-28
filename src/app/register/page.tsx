@@ -20,6 +20,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { getAuthErrorMessage } from '@/lib/firebase-errors';
 import type { UserRole } from '@/context/auth-context';
 
 export default function RegisterPage() {
@@ -48,6 +49,12 @@ export default function RegisterPage() {
       return;
     }
 
+    if (password.length < 6) {
+      toast({ title: 'Senha muito curta', description: 'A senha deve ter pelo menos 6 caracteres.', variant: 'destructive' });
+      setLoading(false);
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -69,10 +76,10 @@ export default function RegisterPage() {
         toast({ title: 'Conta criada!', description: 'Bem-vindo à comunidade Empreenda+.' });
         router.push('/');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Erro no Cadastro',
-        description: error.message || 'Não foi possível criar sua conta.',
+        description: getAuthErrorMessage(error, 'Não foi possível criar sua conta.'),
         variant: 'destructive',
       });
     } finally {
