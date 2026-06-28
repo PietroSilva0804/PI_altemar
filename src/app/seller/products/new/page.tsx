@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,21 +13,35 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { generateProductDescription } from '@/ai/flows/generate-product-descriptions';
 import { categories } from '@/lib/placeholder-data';
+import { useAuth } from '@/context/auth-context';
+import { addProduct, ProductType } from '@/lib/products-service';
+
+const productTypes: ProductType[] = ['Novo', 'Usado', 'Serviço'];
 
 export default function NewProductPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { user, profile, isLoggedIn, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [iaLoading, setIaLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     category: '',
+    type: 'Novo' as ProductType,
     price: '',
     stock: '',
     description: '',
-    keywords: ''
+    keywords: '',
+    imageUrl: '',
   });
+
+  useEffect(() => {
+    if (!authLoading && !isLoggedIn) {
+      toast({ title: 'Faça login', description: 'Você precisa estar logado como vendedor para cadastrar produtos.' });
+      router.push('/login');
+    }
+  }, [authLoading, isLoggedIn, router, toast]);
 
   const handleAiDescription = async () => {
     if (!formData.name || !formData.keywords) {
@@ -41,9 +55,9 @@ export default function NewProductPage() {
 
     setIaLoading(true);
     try {
-      const result = await generateProductDescription({ 
-        title: formData.name, 
-        keywords: formData.keywords 
+      const result = await generateProductDescription({
+        title: formData.name,
+        keywords: formData.keywords
       });
       setFormData(prev => ({ ...prev, description: result.description }));
       toast({ title: "Descrição Gerada!", description: "A IA criou uma descrição incrível para você." });
@@ -56,14 +70,34 @@ export default function NewProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({ title: 'Sessão expirada', description: 'Faça login novamente.', variant: 'destructive' });
+      return;
+    }
+    if (!formData.category) {
+      toast({ title: 'Selecione a categoria', description: 'Escolha uma categoria para o produto.', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
-    
-    // Simulação de salvamento
-    setTimeout(() => {
+    try {
+      await addProduct(user.uid, {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        category: formData.category,
+        type: formData.type,
+        stock: parseInt(formData.stock, 10) || 0,
+        imageUrl: formData.imageUrl,
+        storeName: profile?.storeName || user.displayName || 'Minha Loja',
+      });
+      toast({ title: "Sucesso!", description: "Produto publicado com sucesso." });
+      router.push('/seller/products');
+    } catch (error) {
+      toast({ title: 'Erro ao publicar', description: 'Não foi possível salvar o produto. Tente novamente.', variant: 'destructive' });
+    } finally {
       setLoading(false);
-      toast({ title: "Sucesso!", description: "Produto cadastrado com sucesso." });
-      router.push('/seller/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -87,12 +121,12 @@ export default function NewProductPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome do Produto</Label>
-                <Input 
-                  id="name" 
+                <Input
+                  id="name"
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ex: Caneca de Cerâmica Artesanal" 
-                  required 
+                  placeholder="Ex: Caneca de Cerâmica Artesanal"
+                  required
                 />
               </div>
 
@@ -111,17 +145,34 @@ export default function NewProductPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$)</Label>
-                  <Input 
-                    id="price" 
-                    type="number" 
-                    step="0.01"
-                    value={formData.price}
-                    onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="0,00" 
-                    required 
-                  />
+                  <Label htmlFor="type">Tipo</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={val => setFormData(prev => ({ ...prev, type: val as ProductType }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {productTypes.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Preço (R$)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="0,00"
+                  required
+                />
               </div>
             </CardContent>
           </Card>
@@ -132,10 +183,10 @@ export default function NewProductPage() {
                 <CardTitle>Descrição do Produto</CardTitle>
                 <CardDescription>Use nossa IA para criar um texto vendedor.</CardDescription>
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={handleAiDescription}
                 disabled={iaLoading}
               >
@@ -146,22 +197,22 @@ export default function NewProductPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="keywords">Palavras-chave para a IA (ex: feito à mão, café, presente)</Label>
-                <Input 
-                  id="keywords" 
+                <Input
+                  id="keywords"
                   value={formData.keywords}
                   onChange={e => setFormData(prev => ({ ...prev, keywords: e.target.value }))}
-                  placeholder="Separadas por vírgula" 
+                  placeholder="Separadas por vírgula"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Texto Final</Label>
-                <Textarea 
-                  id="description" 
+                <Textarea
+                  id="description"
                   value={formData.description}
                   onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={8} 
-                  placeholder="Descreva seu produto..." 
-                  required 
+                  rows={8}
+                  placeholder="Descreva seu produto..."
+                  required
                 />
               </div>
             </CardContent>
@@ -172,14 +223,23 @@ export default function NewProductPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Imagens</CardTitle>
+              <CardTitle>Imagem</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <div className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted transition-colors hover:border-primary/50">
                 <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Clique para enviar</p>
+                <p className="text-xs text-muted-foreground">Cole a URL abaixo</p>
               </div>
-              <p className="mt-2 text-[10px] text-muted-foreground text-center">Tamanho recomendado: 800x800px (JPG/PNG)</p>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">URL da Imagem (opcional)</Label>
+                <Input
+                  id="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={e => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">Sem URL, geramos uma imagem padrão.</p>
             </CardContent>
           </Card>
 
@@ -190,13 +250,13 @@ export default function NewProductPage() {
             <CardContent>
               <div className="space-y-2">
                 <Label htmlFor="stock">Quantidade</Label>
-                <Input 
-                  id="stock" 
-                  type="number" 
+                <Input
+                  id="stock"
+                  type="number"
                   value={formData.stock}
                   onChange={e => setFormData(prev => ({ ...prev, stock: e.target.value }))}
-                  placeholder="0" 
-                  required 
+                  placeholder="0"
+                  required
                 />
               </div>
             </CardContent>

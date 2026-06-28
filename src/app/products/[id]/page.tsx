@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { products } from '@/lib/placeholder-data';
+import type { Product } from '@/lib/placeholder-data';
+import { getProductById } from '@/lib/products-service';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,8 +37,9 @@ const renderStars = (rating: number) => {
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // No Next.js 15, params é uma Promise que deve ser desembrulhada com React.use()
   const { id: productId } = use(params);
-  const product = products.find((p) => p.id === productId);
-  
+
+  const [product, setProduct] = useState<Product | null>(() => products.find((p) => p.id === productId) ?? null);
+  const [productLoading, setProductLoading] = useState(!product);
   const [isFavorited, setIsFavorited] = useState(false);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [averageRating, setAverageRating] = useState<number | null>(null);
@@ -44,6 +47,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const { addToCart } = useCart();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fromMock = products.find((p) => p.id === productId) ?? null;
+    if (fromMock) {
+      setProduct(fromMock);
+      setProductLoading(false);
+      return;
+    }
+    setProductLoading(true);
+    getProductById(productId)
+      .then((p) => setProduct(p))
+      .catch(() => setProduct(null))
+      .finally(() => setProductLoading(false));
+  }, [productId]);
 
   useEffect(() => {
     if (!product) return;
@@ -67,6 +84,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
     fetchReviews();
   }, [product]);
+
+  if (productLoading) {
+    return (
+      <div className="container flex justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!product) {
     notFound();

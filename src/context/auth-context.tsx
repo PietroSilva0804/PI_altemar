@@ -6,9 +6,21 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
+export type UserRole = 'buyer' | 'seller';
+
+interface UserProfile {
+  name?: string;
+  email?: string;
+  role: UserRole;
+  storeName?: string;
+  cnpj?: string;
+}
+
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
   isLoggedIn: boolean;
+  isSeller: boolean;
   loading: boolean;
   logout: () => Promise<void>;
 }
@@ -17,26 +29,44 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         // Garantir que o documento do usuário exista no Firestore para preferências e perfil
         const userRef = doc(db, 'users', currentUser.uid);
         const userSnap = await getDoc(userRef);
-        
+
         if (!userSnap.exists()) {
           await setDoc(userRef, {
             name: currentUser.displayName || 'Usuário',
             email: currentUser.email,
+            role: 'buyer',
             createdAt: serverTimestamp(),
           });
+          setProfile({
+            name: currentUser.displayName || 'Usuário',
+            email: currentUser.email || undefined,
+            role: 'buyer',
+          });
+        } else {
+          const data = userSnap.data();
+          setProfile({
+            name: data.name,
+            email: data.email,
+            role: (data.role as UserRole) ?? 'buyer',
+            storeName: data.storeName,
+            cnpj: data.cnpj,
+          });
         }
+      } else {
+        setProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -52,7 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn: !!user, loading, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        isLoggedIn: !!user,
+        isSeller: profile?.role === 'seller',
+        loading,
+        logout,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -11,6 +11,7 @@ import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { getAuthErrorMessage } from '@/lib/firebase-errors';
 import {
   Card,
   CardContent,
@@ -35,10 +36,10 @@ export default function LoginPage() {
             await signInWithEmailAndPassword(auth, email, password);
             toast({ title: "Bem-vindo!", description: "Login realizado com sucesso." });
             router.push('/');
-        } catch (error: any) {
+        } catch (error) {
             toast({
                 title: "Erro no Login",
-                description: "Email ou senha inválidos. Tente novamente.",
+                description: getAuthErrorMessage(error, "E-mail ou senha incorretos. Tente novamente."),
                 variant: "destructive"
             });
         } finally {
@@ -52,7 +53,7 @@ export default function LoginPage() {
             await signInWithPopup(auth, provider);
             router.push('/');
         } catch (error) {
-            toast({ title: "Erro", description: "Falha na autenticação com Google.", variant: "destructive" });
+            toast({ title: "Erro", description: getAuthErrorMessage(error, "Falha na autenticação com Google."), variant: "destructive" });
         }
     };
 
